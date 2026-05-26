@@ -67,6 +67,7 @@ private:
 
     std::atomic<bool> m_encoding{false};
     std::atomic<bool> m_initialized{false};
+    std::atomic<bool> m_finalized{false};
     bool m_streamsInitialized = false;
 
     void *m_fmtCtx = nullptr;

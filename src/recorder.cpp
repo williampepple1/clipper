@@ -15,10 +15,10 @@ Recorder::~Recorder()
     cleanupThreads();
 }
 
-bool Recorder::startRecording(const QRect &captureRegion, int fps, const QString &outputPath,
-                               int outputWidth, int outputHeight)
+bool Recorder::startRecording(const QRect &captureRegion, int fps, int videoBitrate,
+                               const QString &outputPath, int outputWidth, int outputHeight)
 {
-    if (m_recording) {
+    if (m_recording.load()) {
         emit recordingError("Already recording");
         return false;
     }
@@ -51,7 +51,7 @@ bool Recorder::startRecording(const QRect &captureRegion, int fps, const QString
     params.width = outputWidth;
     params.height = outputHeight;
     params.fps = fps;
-    params.videoBitrate = 8000000;
+    params.videoBitrate = videoBitrate;
     params.sampleRate = 48000;
     params.channels = 2;
     params.outputPath = outputPath;
@@ -74,11 +74,20 @@ bool Recorder::startRecording(const QRect &captureRegion, int fps, const QString
                 encoder->pushAudioData(data, ts);
             }, Qt::DirectConnection);
 
-    // Forward capturer errors (DirectConnection - simple signal forwarding)
-    connect(capturer, &ScreenCapturer::captureError, this, &Recorder::recordingError,
-            Qt::DirectConnection);
-    connect(audioCapturer, &AudioCapturer::audioError, this, &Recorder::recordingError,
-            Qt::DirectConnection);
+    // Forward capturer errors - AutoConnection ensures main-thread delivery
+    connect(capturer, &ScreenCapturer::captureError, this, [this](const QString &msg) {
+        if (m_recording.load()) {
+            emit recordingError(msg);
+            stopRecording();
+        }
+    });
+
+    connect(audioCapturer, &AudioCapturer::audioError, this, [this](const QString &msg) {
+        if (m_recording.load()) {
+            emit recordingError(msg);
+            stopRecording();
+        }
+    });
 
     // When capturer finishes, stop encoder too
     connect(capturer, &ScreenCapturer::captureFinished, encoder, &Encoder::stopEncoding,
@@ -108,28 +117,27 @@ bool Recorder::startRecording(const QRect &captureRegion, int fps, const QString
     m_audioThread->start();
     m_encThread->start();
 
-    m_recording = true;
+    m_recording.store(true);
     return true;
 }
 
 void Recorder::stopRecording()
 {
-    if (!m_recording) return;
+    if (!m_recording.load()) return;
 
-    // Set atomic flags - safe to call cross-thread
-    m_capturer->stopCapture();
-    m_audioCapturer->stopCapture();
-    m_encoder->stopEncoding();
+    if (m_capturer) m_capturer->stopCapture();
+    if (m_audioCapturer) m_audioCapturer->stopCapture();
+    if (m_encoder) m_encoder->stopEncoding();
 }
 
 bool Recorder::isRecording() const
 {
-    return m_recording;
+    return m_recording.load();
 }
 
 void Recorder::onEncoderStopped()
 {
-    m_recording = false;
+    m_recording.store(false);
     emit recordingStopped(m_outputPath);
     cleanupThreads();
 }

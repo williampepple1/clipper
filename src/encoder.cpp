@@ -354,6 +354,10 @@ bool Encoder::initAudioEncoder()
 
 void Encoder::finalize()
 {
+    bool expected = false;
+    if (!m_finalized.compare_exchange_strong(expected, true))
+        return;
+
     auto *fmtCtx = static_cast<AVFormatContext *>(m_fmtCtx);
     if (fmtCtx) {
         if (fmtCtx->pb) avio_closep(&fmtCtx->pb);

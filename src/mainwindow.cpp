@@ -248,7 +248,7 @@ void MainWindow::onStartStop()
     int fps = m_fpsSpin->value();
     int bitrate = m_qualityCombo->currentData().toInt();
 
-    m_recorder->startRecording(m_captureRegion, fps, outputPath,
+    m_recorder->startRecording(m_captureRegion, fps, bitrate, outputPath,
                                m_currentPreset.width, m_currentPreset.height);
 }
 

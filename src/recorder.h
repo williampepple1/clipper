@@ -4,6 +4,7 @@
 #include <QString>
 #include <QRect>
 #include <QThread>
+#include <atomic>
 #include <memory>
 
 class ScreenCapturer;
@@ -17,8 +18,8 @@ public:
     explicit Recorder(QObject *parent = nullptr);
     ~Recorder() override;
 
-    bool startRecording(const QRect &captureRegion, int fps, const QString &outputPath,
-                        int outputWidth, int outputHeight);
+    bool startRecording(const QRect &captureRegion, int fps, int videoBitrate,
+                        const QString &outputPath, int outputWidth, int outputHeight);
     void stopRecording();
     bool isRecording() const;
 
@@ -41,7 +42,7 @@ private:
     std::unique_ptr<QThread>        m_audioThread;
     std::unique_ptr<QThread>        m_encThread;
 
-    bool m_recording = false;
+    std::atomic<bool> m_recording{false};
     int m_outputWidth = 1920;
     int m_outputHeight = 1080;
     QString m_outputPath;
