@@ -28,6 +28,7 @@ signals:
     void recordingStopped(const QString &outputPath);
     void recordingError(const QString &message);
     void progressUpdated(int frameCount, double elapsedSec);
+    void previewFrameAvailable(QImage frame);
 
 private slots:
     void onEncoderStopped();

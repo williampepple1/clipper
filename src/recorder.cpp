@@ -89,6 +89,10 @@ bool Recorder::startRecording(const QRect &captureRegion, int fps, int videoBitr
                 encoder->pushAudioData(data, ts);
             }, Qt::DirectConnection);
 
+    // Forward frames for real-time preview (AutoConnection -> main thread)
+    connect(capturer, &ScreenCapturer::frameCaptured, this, &Recorder::previewFrameAvailable,
+            Qt::AutoConnection);
+
     // Forward capturer errors - AutoConnection ensures main-thread delivery
     connect(capturer, &ScreenCapturer::captureError, this, [this](const QString &msg) {
         if (m_recording.load()) {

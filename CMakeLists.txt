@@ -27,6 +27,11 @@ add_executable(clipper
     src/encoder.h        src/encoder.cpp
     src/recorder.h       src/recorder.cpp
     src/regionselector.h src/regionselector.cpp
+    src/hotkeymanager.h  src/hotkeymanager.cpp
+    src/previewwindow.h  src/previewwindow.cpp
+    src/recordingindicator.h src/recordingindicator.cpp
+    src/timelineslider.h src/timelineslider.cpp
+    src/videotrimmer.h   src/videotrimmer.cpp
     src/platformpresets.h
 )
 
@@ -35,5 +40,5 @@ target_include_directories(clipper PRIVATE ${FFMPEG_INCLUDE_DIR} src)
 target_link_libraries(clipper PRIVATE
     Qt6::Widgets
     ${AVCODEC_LIB} ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWSCALE_LIB} ${SWRESAMPLE_LIB}
-    d3d11 dxgi ole32 avrt
+    d3d11 dxgi ole32 avrt user32
 )

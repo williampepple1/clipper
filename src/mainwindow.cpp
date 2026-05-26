@@ -1,6 +1,10 @@
 #include "mainwindow.h"
 #include "recorder.h"
 #include "regionselector.h"
+#include "hotkeymanager.h"
+#include "previewwindow.h"
+#include "recordingindicator.h"
+#include "videotrimmer.h"
 
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -14,11 +18,15 @@
 #include <QMessageBox>
 #include <QStyle>
 #include <QFont>
+#include <QCheckBox>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_recorder(std::make_unique<Recorder>(this))
     , m_timer(new QTimer(this))
+    , m_hotkeyMgr(new HotkeyManager(this))
+    , m_previewWindow(std::make_unique<PreviewWindow>(nullptr))
+    , m_indicator(std::make_unique<RecordingIndicator>(nullptr))
 {
     setupUi();
 
@@ -29,7 +37,13 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_recorder.get(), &Recorder::recordingStopped, this, &MainWindow::onRecordingStopped);
     connect(m_recorder.get(), &Recorder::recordingError, this, &MainWindow::onRecordingError);
     connect(m_recorder.get(), &Recorder::progressUpdated, this, &MainWindow::onProgressUpdated);
+    connect(m_recorder.get(), &Recorder::previewFrameAvailable, this, &MainWindow::onPreviewFrame);
     connect(m_timer, &QTimer::timeout, this, &MainWindow::updateTimerDisplay);
+
+    // Global hotkey: Ctrl+Shift+R
+    m_hotkeyMgr->registerHotkey(QKeySequence("Ctrl+Shift+R"));
+    qApp->installNativeEventFilter(m_hotkeyMgr);
+    connect(m_hotkeyMgr, &HotkeyManager::hotkeyPressed, this, &MainWindow::onHotkeyPressed);
 
     QString defaultDir = QStandardPaths::writableLocation(QStandardPaths::VideosLocation);
     m_outputPath->setText(defaultDir + "/clip_" + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss") + ".mp4");
@@ -37,12 +51,15 @@ MainWindow::MainWindow(QWidget *parent)
     onPresetChanged(0);
 }
 
-MainWindow::~MainWindow() = default;
+MainWindow::~MainWindow()
+{
+    m_hotkeyMgr->unregisterHotkey();
+}
 
 void MainWindow::setupUi()
 {
     setWindowTitle("Clipper - Screen Recorder");
-    setMinimumWidth(480);
+    setMinimumWidth(500);
     setStyleSheet(R"(
         QMainWindow { background: #1e1e2e; }
         QLabel { color: #cdd6f4; }
@@ -57,6 +74,8 @@ void MainWindow::setupUi()
         QComboBox QAbstractItemView {
             background: #313244; color: #cdd6f4; selection-background-color: #89b4fa;
         }
+        QCheckBox { color: #cdd6f4; }
+        QCheckBox::indicator { width: 16px; height: 16px; }
         QPushButton {
             background: #89b4fa; color: #1e1e2e; border: none;
             border-radius: 4px; padding: 8px 16px; font-weight: bold;
@@ -103,6 +122,10 @@ void MainWindow::setupUi()
     m_qualityCombo->addItem("Medium (4 Mbps)", 4000000);
     m_qualityCombo->addItem("Low (2 Mbps)", 2000000);
     capLayout->addRow("Quality:", m_qualityCombo);
+
+    m_previewCb = new QCheckBox("Show preview window");
+    m_previewCb->setChecked(true);
+    capLayout->addRow(m_previewCb);
 
     mainLayout->addWidget(capGroup);
 
@@ -152,6 +175,12 @@ void MainWindow::setupUi()
 
     mainLayout->addLayout(statusLayout);
 
+    // Hotkey hint
+    auto *hintLabel = new QLabel("Hotkey: Ctrl+Shift+R to start/stop recording");
+    hintLabel->setStyleSheet("color: #6c7086; font-size: 10px;");
+    hintLabel->setAlignment(Qt::AlignCenter);
+    mainLayout->addWidget(hintLabel);
+
     m_lastClipLabel = new QLabel();
     m_lastClipLabel->setStyleSheet("color: #a6e3a1; font-size: 11px;");
     m_lastClipLabel->setWordWrap(true);
@@ -180,7 +209,6 @@ void MainWindow::updatePresetInfo()
         .arg(m_currentPreset.height));
     m_aspectLabel->setText(QString::number(m_currentPreset.aspectRatio(), 'f', 3) + ":1");
 
-    // Default capture region to center of primary screen
     QScreen *screen = QGuiApplication::primaryScreen();
     if (screen) {
         QRect sg = screen->geometry();
@@ -215,9 +243,7 @@ void MainWindow::onSelectRegion()
             .arg(m_currentPreset.name));
     });
 
-    connect(selector, &RegionSelector::cancelled, this, []() {
-        // selection cancelled
-    });
+    connect(selector, &RegionSelector::cancelled, this, []() {});
 
     hide();
     selector->show();
@@ -241,7 +267,6 @@ void MainWindow::onStartStop()
         return;
     }
 
-    // Ensure .mp4 extension
     if (!outputPath.endsWith(".mp4", Qt::CaseInsensitive))
         outputPath += ".mp4";
 
@@ -252,6 +277,17 @@ void MainWindow::onStartStop()
                                m_currentPreset.width, m_currentPreset.height);
 }
 
+void MainWindow::onHotkeyPressed()
+{
+    onStartStop();
+}
+
+void MainWindow::onPreviewFrame(QImage frame)
+{
+    if (m_previewCb->isChecked())
+        m_previewWindow->updateFrame(frame, 0);
+}
+
 void MainWindow::onRecordingStarted()
 {
     m_errorShown = false;
@@ -259,6 +295,10 @@ void MainWindow::onRecordingStarted()
     m_recordingStartMs = QDateTime::currentMSecsSinceEpoch();
     m_timer->start(200);
     m_statusLabel->setText("Recording...");
+
+    m_indicator->start();
+    if (m_previewCb->isChecked())
+        m_previewWindow->startPreview();
 }
 
 void MainWindow::onRecordingStopped(const QString &path)
@@ -267,8 +307,12 @@ void MainWindow::onRecordingStopped(const QString &path)
     m_timer->stop();
     m_statusLabel->setText("Ready");
 
+    m_indicator->stop();
+    m_previewWindow->stopPreview();
+
     if (!path.isEmpty()) {
-        m_lastClipLabel->setText(QString("Saved: %1").arg(path));
+        m_lastClipLabel->setText(QString("Last: %1  (click to open trimmer)").arg(path));
+        openTrimmer(path);
     }
 }
 
@@ -278,6 +322,8 @@ void MainWindow::onRecordingError(const QString &msg)
     m_errorShown = true;
     setRecordingState(false);
     m_timer->stop();
+    m_indicator->stop();
+    m_previewWindow->stopPreview();
     m_statusLabel->setText("Error: " + msg);
     m_statusLabel->setStyleSheet("color: #f38ba8;");
     QMessageBox::critical(this, "Recording Error", msg);
@@ -314,6 +360,24 @@ void MainWindow::updateTimerDisplay()
         .arg(s, 2, 10, QChar('0')));
 }
 
+void MainWindow::openTrimmer(const QString &path)
+{
+    auto *trimmer = new VideoTrimmer(path, nullptr);
+    trimmer->setAttribute(Qt::WA_DeleteOnClose);
+
+    connect(trimmer, &VideoTrimmer::trimCompleted, this, [this](const QString &trimmedPath) {
+        m_lastClipLabel->setText(QString("Trimmed: %1").arg(trimmedPath));
+        m_statusLabel->setText("Ready");
+    });
+
+    connect(trimmer, &VideoTrimmer::trimError, this, [this](const QString &msg) {
+        m_statusLabel->setText("Trim error: " + msg);
+        m_statusLabel->setStyleSheet("color: #f38ba8;");
+    });
+
+    trimmer->show();
+}
+
 void MainWindow::setRecordingState(bool recording)
 {
     if (recording) {
@@ -327,6 +391,7 @@ void MainWindow::setRecordingState(bool recording)
         m_browseBtn->setEnabled(false);
         m_fpsSpin->setEnabled(false);
         m_qualityCombo->setEnabled(false);
+        m_previewCb->setEnabled(false);
         m_timerLabel->setVisible(true);
     } else {
         m_recordBtn->setText("Start Recording");
@@ -339,6 +404,7 @@ void MainWindow::setRecordingState(bool recording)
         m_browseBtn->setEnabled(true);
         m_fpsSpin->setEnabled(true);
         m_qualityCombo->setEnabled(true);
+        m_previewCb->setEnabled(true);
         m_timerLabel->setVisible(false);
     }
 
