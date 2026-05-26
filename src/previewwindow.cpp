@@ -73,13 +73,13 @@ void PreviewWindow::paintEvent(QPaintEvent *)
         p.drawImage(target, m_latestFrame);
 
         // Border
-        p.setPen(QPen(QColor(137, 180, 250, 100), 1));
+        p.setPen(QPen(QColor(120, 144, 156, 100), 1));
         p.setBrush(Qt::NoBrush);
         p.drawRoundedRect(target.adjusted(-1, -1, 1, 1), 4, 4);
     }
 
     // Title
-    p.setPen(QColor(205, 214, 244));
+    p.setPen(QColor("#E8D5C8"));
     QFont f = font();
     f.setPointSize(8);
     p.setFont(f);

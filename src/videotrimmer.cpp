@@ -25,23 +25,23 @@ VideoTrimmer::VideoTrimmer(const QString &videoPath, QWidget *parent)
     setWindowTitle("Trim Clip");
     setMinimumWidth(580);
     setStyleSheet(R"(
-        QDialog { background: #1e1e2e; }
-        QLabel { color: #cdd6f4; }
-        QGroupBox { color: #89b4fa; font-weight: bold; border: 1px solid #45475a;
+        QDialog { background: #FDF6EC; }
+        QLabel { color: #4E342E; }
+        QGroupBox { color: #5D4037; font-weight: bold; border: 1px solid #D7CCC8;
                      border-radius: 6px; margin-top: 12px; padding-top: 14px; }
         QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 6px; }
         QLineEdit {
-            background: #313244; color: #cdd6f4; border: 1px solid #45475a;
+            background: #FFF8F0; color: #4E342E; border: 1px solid #D7CCC8;
             border-radius: 4px; padding: 4px 8px;
         }
         QPushButton {
-            background: #89b4fa; color: #1e1e2e; border: none;
+            background: #78909C; color: #FFFFFF; border: none;
             border-radius: 4px; padding: 8px 16px; font-weight: bold;
         }
-        QPushButton:hover { background: #a6c8ff; }
-        QPushButton:pressed { background: #6c8ed4; }
-        QPushButton#trimBtn { background: #a6e3a1; padding: 10px 24px; font-size: 14px; }
-        QPushButton#trimBtn:disabled { background: #45475a; color: #6c7086; }
+        QPushButton:hover { background: #90A4AE; }
+        QPushButton:pressed { background: #546E7A; }
+        QPushButton#trimBtn { background: #81C784; color: #FFFFFF; padding: 10px 24px; font-size: 14px; }
+        QPushButton#trimBtn:disabled { background: #D7CCC8; color: #A1887F; }
     )");
 
     auto *mainLayout = new QVBoxLayout(this);
@@ -67,11 +67,11 @@ VideoTrimmer::VideoTrimmer(const QString &videoPath, QWidget *parent)
 
     auto *timeLabels = new QHBoxLayout();
     m_startLabel = new QLabel("Start: 0:00");
-    m_startLabel->setStyleSheet("color: #89b4fa; font-weight: bold;");
+    m_startLabel->setStyleSheet("color: #78909C; font-weight: bold;");
     timeLabels->addWidget(m_startLabel);
     timeLabels->addStretch();
     m_endLabel = new QLabel("End: 0:00");
-    m_endLabel->setStyleSheet("color: #f38ba8; font-weight: bold;");
+    m_endLabel->setStyleSheet("color: #E8A0A0; font-weight: bold;");
     timeLabels->addWidget(m_endLabel);
     timeLayout->addLayout(timeLabels);
 
@@ -203,7 +203,7 @@ void VideoTrimmer::onTrim()
     }
 
     m_statusLabel->setText("Trimming...");
-    m_statusLabel->setStyleSheet("color: #89b4fa;");
+    m_statusLabel->setStyleSheet("color: #78909C;");
     m_trimBtn->setEnabled(false);
 
     m_process = new QProcess(this);
@@ -236,11 +236,11 @@ void VideoTrimmer::onProcessFinished(int exitCode)
 {
     if (exitCode == 0) {
         m_statusLabel->setText("Done!");
-        m_statusLabel->setStyleSheet("color: #a6e3a1; font-weight: bold;");
+        m_statusLabel->setStyleSheet("color: #81C784; font-weight: bold;");
         emit trimCompleted(m_outputPath);
     } else {
         m_statusLabel->setText("Failed");
-        m_statusLabel->setStyleSheet("color: #f38ba8;");
+        m_statusLabel->setStyleSheet("color: #D32F2F;");
         emit trimError("FFmpeg exited with code " + QString::number(exitCode));
     }
     m_process->deleteLater();

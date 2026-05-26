@@ -71,4 +71,5 @@ private:
     int m_frameCount = 0;
     double m_elapsedSec = 0;
     bool m_errorShown = false;
+    bool m_stopWasError = false;
 };

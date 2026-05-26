@@ -61,28 +61,28 @@ void MainWindow::setupUi()
     setWindowTitle("Clipper - Screen Recorder");
     setMinimumWidth(500);
     setStyleSheet(R"(
-        QMainWindow { background: #1e1e2e; }
-        QLabel { color: #cdd6f4; }
-        QGroupBox { color: #89b4fa; font-weight: bold; border: 1px solid #45475a;
+        QMainWindow { background: #FDF6EC; }
+        QLabel { color: #4E342E; }
+        QGroupBox { color: #5D4037; font-weight: bold; border: 1px solid #D7CCC8;
                      border-radius: 6px; margin-top: 12px; padding-top: 14px; }
         QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 6px; }
         QComboBox, QLineEdit, QSpinBox {
-            background: #313244; color: #cdd6f4; border: 1px solid #45475a;
+            background: #FFF8F0; color: #4E342E; border: 1px solid #D7CCC8;
             border-radius: 4px; padding: 4px 8px;
         }
         QComboBox::drop-down { border: none; }
         QComboBox QAbstractItemView {
-            background: #313244; color: #cdd6f4; selection-background-color: #89b4fa;
+            background: #FFF8F0; color: #4E342E; selection-background-color: #78909C;
         }
-        QCheckBox { color: #cdd6f4; }
+        QCheckBox { color: #4E342E; }
         QCheckBox::indicator { width: 16px; height: 16px; }
         QPushButton {
-            background: #89b4fa; color: #1e1e2e; border: none;
+            background: #78909C; color: #FFFFFF; border: none;
             border-radius: 4px; padding: 8px 16px; font-weight: bold;
         }
-        QPushButton:hover { background: #a6c8ff; }
-        QPushButton:pressed { background: #6c8ed4; }
-        QPushButton#recordBtn { background: #f38ba8; font-size: 14px; padding: 10px 24px; }
+        QPushButton:hover { background: #90A4AE; }
+        QPushButton:pressed { background: #546E7A; }
+        QPushButton#recordBtn { background: #E8A0A0; color: #FFFFFF; font-size: 14px; padding: 10px 24px; }
     )");
 
     auto *central = new QWidget(this);
@@ -149,7 +149,7 @@ void MainWindow::setupUi()
 
     m_selectRegionBtn = new QPushButton("Select Region");
     m_selectRegionBtn->setMinimumHeight(36);
-    m_selectRegionBtn->setStyleSheet("background: #45475a; color: #cdd6f4;");
+    m_selectRegionBtn->setStyleSheet("background: #8D6E63; color: #FFFFFF;");
     btnLayout->addWidget(m_selectRegionBtn);
 
     m_recordBtn = new QPushButton("Start Recording");
@@ -163,13 +163,13 @@ void MainWindow::setupUi()
     auto *statusLayout = new QHBoxLayout();
 
     m_statusLabel = new QLabel("Ready");
-    m_statusLabel->setStyleSheet("color: #a6adc8;");
+    m_statusLabel->setStyleSheet("color: #8D6E63;");
     statusLayout->addWidget(m_statusLabel);
 
     statusLayout->addStretch();
 
     m_timerLabel = new QLabel("00:00:00");
-    m_timerLabel->setStyleSheet("font-size: 14px; font-weight: bold; color: #89b4fa;");
+    m_timerLabel->setStyleSheet("font-size: 14px; font-weight: bold; color: #78909C;");
     m_timerLabel->setVisible(false);
     statusLayout->addWidget(m_timerLabel);
 
@@ -177,12 +177,12 @@ void MainWindow::setupUi()
 
     // Hotkey hint
     auto *hintLabel = new QLabel("Hotkey: Ctrl+Shift+R to start/stop recording");
-    hintLabel->setStyleSheet("color: #6c7086; font-size: 10px;");
+    hintLabel->setStyleSheet("color: #A1887F; font-size: 10px;");
     hintLabel->setAlignment(Qt::AlignCenter);
     mainLayout->addWidget(hintLabel);
 
     m_lastClipLabel = new QLabel();
-    m_lastClipLabel->setStyleSheet("color: #a6e3a1; font-size: 11px;");
+    m_lastClipLabel->setStyleSheet("color: #81C784; font-size: 11px;");
     m_lastClipLabel->setWordWrap(true);
     mainLayout->addWidget(m_lastClipLabel);
 
@@ -291,6 +291,7 @@ void MainWindow::onPreviewFrame(QImage frame)
 void MainWindow::onRecordingStarted()
 {
     m_errorShown = false;
+    m_stopWasError = false;
     setRecordingState(true);
     m_recordingStartMs = QDateTime::currentMSecsSinceEpoch();
     m_timer->start(200);
@@ -310,7 +311,7 @@ void MainWindow::onRecordingStopped(const QString &path)
     m_indicator->stop();
     m_previewWindow->stopPreview();
 
-    if (!path.isEmpty()) {
+    if (!path.isEmpty() && !m_stopWasError) {
         m_lastClipLabel->setText(QString("Last: %1  (click to open trimmer)").arg(path));
         openTrimmer(path);
     }
@@ -320,12 +321,13 @@ void MainWindow::onRecordingError(const QString &msg)
 {
     if (m_errorShown) return;
     m_errorShown = true;
+    m_stopWasError = true;
     setRecordingState(false);
     m_timer->stop();
     m_indicator->stop();
     m_previewWindow->stopPreview();
     m_statusLabel->setText("Error: " + msg);
-    m_statusLabel->setStyleSheet("color: #f38ba8;");
+    m_statusLabel->setStyleSheet("color: #D32F2F;");
     QMessageBox::critical(this, "Recording Error", msg);
 }
 
@@ -372,7 +374,7 @@ void MainWindow::openTrimmer(const QString &path)
 
     connect(trimmer, &VideoTrimmer::trimError, this, [this](const QString &msg) {
         m_statusLabel->setText("Trim error: " + msg);
-        m_statusLabel->setStyleSheet("color: #f38ba8;");
+        m_statusLabel->setStyleSheet("color: #D32F2F;");
     });
 
     trimmer->show();
@@ -383,7 +385,7 @@ void MainWindow::setRecordingState(bool recording)
     if (recording) {
         m_recordBtn->setText("Stop Recording");
         m_recordBtn->setStyleSheet(
-            "background: #a6e3a1; color: #1e1e2e; border: none; border-radius: 4px;"
+            "background: #81C784; color: #FFFFFF; border: none; border-radius: 4px;"
             "padding: 10px 24px; font-weight: bold; font-size: 14px;");
         m_selectRegionBtn->setEnabled(false);
         m_presetCombo->setEnabled(false);
@@ -396,7 +398,7 @@ void MainWindow::setRecordingState(bool recording)
     } else {
         m_recordBtn->setText("Start Recording");
         m_recordBtn->setStyleSheet(
-            "background: #f38ba8; color: #1e1e2e; border: none; border-radius: 4px;"
+            "background: #E8A0A0; color: #FFFFFF; border: none; border-radius: 4px;"
             "padding: 10px 24px; font-weight: bold; font-size: 14px;");
         m_selectRegionBtn->setEnabled(true);
         m_presetCombo->setEnabled(true);
@@ -408,5 +410,5 @@ void MainWindow::setRecordingState(bool recording)
         m_timerLabel->setVisible(false);
     }
 
-    m_statusLabel->setStyleSheet("color: #a6adc8;");
+    m_statusLabel->setStyleSheet("color: #8D6E63;");
 }

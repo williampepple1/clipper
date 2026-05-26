@@ -55,18 +55,18 @@ void RegionSelector::paintEvent(QPaintEvent *)
     p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
     // Selection border
-    QPen border(QColor(0, 150, 255), 2);
+    QPen border(QColor("#78909C"), 2);
     p.setPen(border);
     p.setBrush(Qt::NoBrush);
     p.drawRect(m_selectionRect.adjusted(1, 1, -1, -1));
 
     // Outer glow
-    QPen glow(QColor(0, 150, 255, 80), 4);
+    QPen glow(QColor(120, 144, 156, 80), 4);
     p.setPen(glow);
     p.drawRect(m_selectionRect.adjusted(2, 2, -2, -2));
 
     // Corner handles
-    p.setBrush(QColor(0, 150, 255));
+    p.setBrush(QColor("#78909C"));
     p.setPen(Qt::NoBrush);
     int hs = HANDLE_SIZE;
     p.drawRect(m_selectionRect.left(), m_selectionRect.top(), hs, hs);

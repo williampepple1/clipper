@@ -174,7 +174,7 @@ void Encoder::encodeLoop()
             }
 
             int consumed = static_cast<int>(srcPtr - src);
-            if (consumed < combined.size())
+            if (consumed < combined.size() && combined.size() < 65536)
                 m_audioRemainder = combined.mid(consumed);
             else
                 m_audioRemainder.clear();

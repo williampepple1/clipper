@@ -33,6 +33,7 @@ add_executable(clipper
     src/timelineslider.h src/timelineslider.cpp
     src/videotrimmer.h   src/videotrimmer.cpp
     src/platformpresets.h
+    src/clipper.qrc
 )
 
 target_include_directories(clipper PRIVATE ${FFMPEG_INCLUDE_DIR} src)

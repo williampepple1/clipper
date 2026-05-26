@@ -63,7 +63,7 @@ private:
     QMutex m_audioMutex;
     QWaitCondition m_videoCond;
     QWaitCondition m_audioCond;
-    static constexpr int MAX_QUEUE_SIZE = 60;
+    static constexpr int MAX_QUEUE_SIZE = 20;
 
     std::atomic<bool> m_encoding{false};
     std::atomic<bool> m_initialized{false};

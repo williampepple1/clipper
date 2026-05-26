@@ -38,17 +38,15 @@ void TimelineSlider::paintEvent(QPaintEvent *)
 
     // Background track
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(49, 50, 68));
-    p.drawRoundedRect(barLeft, barY - barH / 2, barW, barH, 4, 4);
+    p.setBrush(QColor("#E0D6C8"));
 
     // Selected range
     int selLeft = timeToPos(m_startSec);
     int selRight = timeToPos(m_endSec);
-    p.setBrush(QColor(137, 180, 250, 80));
-    p.drawRoundedRect(selLeft, barY - barH / 2, selRight - selLeft, barH, 4, 4);
+    p.setBrush(QColor(120, 144, 156, 80));
 
     // Tick marks
-    p.setPen(QColor(205, 214, 244, 80));
+    p.setPen(QColor(141, 110, 99, 80));
     QFont f = font();
     f.setPointSize(8);
     p.setFont(f);
@@ -67,14 +65,14 @@ void TimelineSlider::paintEvent(QPaintEvent *)
 
     // Start handle (left)
     QRect startR(selLeft - HANDLE_WIDTH / 2, barY - 14, HANDLE_WIDTH, 28);
-    p.setBrush(QColor(137, 180, 250));
-    p.setPen(QPen(QColor(30, 30, 46), 2));
+    p.setBrush(QColor("#78909C"));
+    p.setPen(QPen(QColor("#FDF6EC"), 2));
     p.drawRoundedRect(startR, 4, 4);
 
     // End handle (right)
     QRect endR(selRight - HANDLE_WIDTH / 2, barY - 14, HANDLE_WIDTH, 28);
-    p.setBrush(QColor(243, 139, 168));
-    p.setPen(QPen(QColor(30, 30, 46), 2));
+    p.setBrush(QColor("#E8A0A0"));
+    p.setPen(QPen(QColor("#FDF6EC"), 2));
     p.drawRoundedRect(endR, 4, 4);
 }
 

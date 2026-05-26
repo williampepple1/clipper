@@ -112,9 +112,10 @@ void ScreenCapturer::startCapture(const QRect &region, int targetFps)
 
         if (FAILED(hr)) {
             if (hr == DXGI_ERROR_ACCESS_LOST) {
-                qWarning() << "Access lost, reinitializing duplication...";
+                qWarning() << "Access lost, stopping capture";
                 m_duplication.Reset();
                 emit captureError("Desktop capture access lost");
+                m_capturing = false;
             }
             continue;
         }
