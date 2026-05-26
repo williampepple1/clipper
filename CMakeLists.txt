@@ -40,5 +40,5 @@ target_include_directories(clipper PRIVATE ${FFMPEG_INCLUDE_DIR} src)
 target_link_libraries(clipper PRIVATE
     Qt6::Widgets
     ${AVCODEC_LIB} ${AVFORMAT_LIB} ${AVUTIL_LIB} ${SWSCALE_LIB} ${SWRESAMPLE_LIB}
-    d3d11 dxgi ole32 avrt user32
+    d3d11 dxgi ole32 avrt user32 uuid
 )

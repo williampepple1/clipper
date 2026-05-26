@@ -1,17 +1,10 @@
+#include <initguid.h>
 #include "audiocapturer.h"
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QThread>
-#include <audioclientactivationparams.h>
 
 #pragma comment(lib, "avrt.lib")
-
-namespace {
-    const CLSID CLSID_MMDeviceEnumerator = __uuidof(MMDeviceEnumerator);
-    const IID IID_IMMDeviceEnumerator = __uuidof(IMMDeviceEnumerator);
-    const IID IID_IAudioClient = __uuidof(IAudioClient);
-    const IID IID_IAudioCaptureClient = __uuidof(IAudioCaptureClient);
-}
 
 AudioCapturer::AudioCapturer(QObject *parent)
     : QObject(parent)

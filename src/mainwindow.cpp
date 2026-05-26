@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *parent)
     qApp->installNativeEventFilter(m_hotkeyMgr);
     connect(m_hotkeyMgr, &HotkeyManager::hotkeyPressed, this, &MainWindow::onHotkeyPressed);
 
-    QString defaultDir = QStandardPaths::writableLocation(QStandardPaths::VideosLocation);
+    QString defaultDir = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
     m_outputPath->setText(defaultDir + "/clip_" + QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss") + ".mp4");
 
     onPresetChanged(0);

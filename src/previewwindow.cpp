@@ -64,8 +64,10 @@ void PreviewWindow::paintEvent(QPaintEvent *)
 
     QMutexLocker lock(&m_frameMutex);
     if (!m_latestFrame.isNull()) {
-        QRect imgRect = m_latestFrame.rect();
-        QRect target = imgRect.scaled(size() - QSize(16, 16), Qt::KeepAspectRatio);
+        QSize imgSize = m_latestFrame.size();
+        QSize availSize = size() - QSize(16, 16);
+        QSize targetSize = imgSize.scaled(availSize, Qt::KeepAspectRatio);
+        QRect target(QPoint(0, 0), targetSize);
         target.moveCenter(rect().center());
 
         p.drawImage(target, m_latestFrame);
