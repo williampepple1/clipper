@@ -45,5 +45,6 @@ private:
     std::atomic<bool> m_recording{false};
     int m_outputWidth = 1920;
     int m_outputHeight = 1080;
+    qreal m_dpiScale = 1.0;
     QString m_outputPath;
 };

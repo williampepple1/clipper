@@ -84,4 +84,6 @@ private:
     int m_audioStreamIdx = -1;
     int m_frameCount = 0;
     int64_t m_audioPts = 0;
+    QByteArray m_audioRemainder;
+    int m_audioFrameSize = 0;
 };

@@ -97,7 +97,7 @@ void ScreenCapturer::startCapture(const QRect &region, int targetFps)
         qint64 elapsed = nowUs - lastCaptureUs;
 
         if (elapsed < frameIntervalUs) {
-            QThread::usleep(static_cast<unsigned long>(frameIntervalUs - elapsed));
+            QThread::usleep(static_cast<unsigned long>(qMax(0LL, frameIntervalUs - elapsed)));
             nowUs = clock.nsecsElapsed() / 1000;
         }
         lastCaptureUs = nowUs;
@@ -158,7 +158,7 @@ void ScreenCapturer::startCapture(const QRect &region, int targetFps)
             int cropH = qMin(region.height(), (int)srcDesc.Height - cropY);
 
             if (cropW > 0 && cropH > 0) {
-                QImage img(cropW, cropH, QImage::Format_ARGB32);
+                QImage img(cropW, cropH, QImage::Format_RGB32);
                 uint8_t *srcRow = static_cast<uint8_t *>(mapped.pData)
                     + (cropY * mapped.RowPitch) + (cropX * 4);
 
@@ -166,11 +166,7 @@ void ScreenCapturer::startCapture(const QRect &region, int targetFps)
                     uint32_t *src = reinterpret_cast<uint32_t *>(srcRow + y * mapped.RowPitch);
                     QRgb *dst = reinterpret_cast<QRgb *>(img.scanLine(y));
                     for (int x = 0; x < cropW; ++x) {
-                        uint32_t pixel = src[x];
-                        uint8_t b = (pixel >> 16) & 0xFF;
-                        uint8_t g = (pixel >> 8) & 0xFF;
-                        uint8_t r = pixel & 0xFF;
-                        dst[x] = qRgb(r, g, b);
+                        dst[x] = src[x] | 0xFF000000;
                     }
                 }
 

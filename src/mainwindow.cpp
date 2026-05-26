@@ -254,6 +254,7 @@ void MainWindow::onStartStop()
 
 void MainWindow::onRecordingStarted()
 {
+    m_errorShown = false;
     setRecordingState(true);
     m_recordingStartMs = QDateTime::currentMSecsSinceEpoch();
     m_timer->start(200);
@@ -273,6 +274,8 @@ void MainWindow::onRecordingStopped(const QString &path)
 
 void MainWindow::onRecordingError(const QString &msg)
 {
+    if (m_errorShown) return;
+    m_errorShown = true;
     setRecordingState(false);
     m_timer->stop();
     m_statusLabel->setText("Error: " + msg);

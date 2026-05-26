@@ -48,6 +48,7 @@ void Encoder::encodeLoop()
 
     if (!initVideoEncoder() || !initAudioEncoder()) {
         m_encoding = false;
+        finalize();
         emit encodingStopped();
         return;
     }
@@ -58,6 +59,7 @@ void Encoder::encodeLoop()
         av_strerror(ret, errBuf, sizeof(errBuf));
         emit encodingError(QString("Failed to open output file: %1").arg(errBuf));
         m_encoding = false;
+        finalize();
         emit encodingStopped();
         return;
     }
@@ -68,6 +70,7 @@ void Encoder::encodeLoop()
         av_strerror(ret, errBuf, sizeof(errBuf));
         emit encodingError(QString("Failed to write header: %1").arg(errBuf));
         m_encoding = false;
+        finalize();
         emit encodingStopped();
         return;
     }
@@ -84,6 +87,7 @@ void Encoder::encodeLoop()
 
     AVPacket *pkt = av_packet_alloc();
     double startTimeSec = -1.0;
+    m_audioFrameSize = m_params.channels * (sizeof(int16_t));
 
     while (m_encoding.load(std::memory_order_acquire)) {
         bool didWork = false;
@@ -100,7 +104,9 @@ void Encoder::encodeLoop()
         if (didWork && !vPkt.image.isNull()) {
             if (startTimeSec < 0) startTimeSec = vPkt.timestampUs / 1000000.0;
 
-            QImage rgb = vPkt.image.convertToFormat(QImage::Format_RGB32);
+            QImage rgb = (vPkt.image.format() == QImage::Format_RGB32)
+                ? vPkt.image
+                : vPkt.image.convertToFormat(QImage::Format_RGB32);
             uint8_t *srcData[1] = {rgb.bits()};
             int srcStride[1] = {static_cast<int>(rgb.bytesPerLine())};
 
@@ -141,8 +147,9 @@ void Encoder::encodeLoop()
         if (hasAudio && !aPkt.data.isEmpty()) {
             if (startTimeSec < 0) startTimeSec = aPkt.timestampUs / 1000000.0;
 
-            const uint8_t *src = reinterpret_cast<const uint8_t *>(aPkt.data.constData());
-            int srcSamples = aPkt.data.size() / (m_params.channels * 2);
+            QByteArray combined = m_audioRemainder + aPkt.data;
+            const uint8_t *src = reinterpret_cast<const uint8_t *>(combined.constData());
+            int srcSamples = combined.size() / m_audioFrameSize;
             const uint8_t *srcPtr = src;
 
             av_frame_make_writable(aFrame);
@@ -165,6 +172,12 @@ void Encoder::encodeLoop()
                     av_packet_unref(pkt);
                 }
             }
+
+            int consumed = static_cast<int>(srcPtr - src);
+            if (consumed < combined.size())
+                m_audioRemainder = combined.mid(consumed);
+            else
+                m_audioRemainder.clear();
         }
 
         if (!didWork && !hasAudio) {
@@ -201,6 +214,7 @@ void Encoder::encodeLoop()
         QMutexLocker aLock(&m_audioMutex);
         m_audioQueue.clear();
     }
+    m_audioRemainder.clear();
 
     finalize();
 

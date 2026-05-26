@@ -3,6 +3,8 @@
 #include "audiocapturer.h"
 #include "encoder.h"
 #include <QDebug>
+#include <QGuiApplication>
+#include <QScreen>
 
 Recorder::Recorder(QObject *parent)
     : QObject(parent)
@@ -11,6 +13,9 @@ Recorder::Recorder(QObject *parent)
 
 Recorder::~Recorder()
 {
+    if (m_encoder) {
+        QObject::disconnect(m_encoder.get(), nullptr, this, nullptr);
+    }
     stopRecording();
     cleanupThreads();
 }
@@ -26,6 +31,16 @@ bool Recorder::startRecording(const QRect &captureRegion, int fps, int videoBitr
     m_outputWidth = outputWidth;
     m_outputHeight = outputHeight;
     m_outputPath = outputPath;
+
+    // Scale logical capture region to physical pixels for HiDPI displays
+    m_dpiScale = 1.0;
+    if (auto *screen = QGuiApplication::primaryScreen())
+        m_dpiScale = screen->devicePixelRatio();
+    QRect physRegion(
+        qRound(captureRegion.x() * m_dpiScale),
+        qRound(captureRegion.y() * m_dpiScale),
+        qRound(captureRegion.width() * m_dpiScale),
+        qRound(captureRegion.height() * m_dpiScale));
 
     cleanupThreads();
 
@@ -94,9 +109,9 @@ bool Recorder::startRecording(const QRect &captureRegion, int fps, int videoBitr
             Qt::DirectConnection);
 
     // Set up thread execution - each thread runs the worker's loop
-    connect(m_capThread.get(), &QThread::started, capturer, [capturer, captureRegion, fps]() {
+    connect(m_capThread.get(), &QThread::started, capturer, [capturer, physRegion, fps]() {
         capturer->initialize();
-        capturer->startCapture(captureRegion, fps);
+        capturer->startCapture(physRegion, fps);
     });
 
     connect(m_audioThread.get(), &QThread::started, audioCapturer, [audioCapturer]() {

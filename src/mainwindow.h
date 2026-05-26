@@ -58,4 +58,5 @@ private:
     qint64 m_recordingStartMs = 0;
     int m_frameCount = 0;
     double m_elapsedSec = 0;
+    bool m_errorShown = false;
 };
