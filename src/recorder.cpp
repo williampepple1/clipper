@@ -163,6 +163,10 @@ void Recorder::onEncoderStopped()
 
 void Recorder::cleanupThreads()
 {
+    if (m_capturer) m_capturer->stopCapture();
+    if (m_audioCapturer) m_audioCapturer->stopCapture();
+    if (m_encoder) m_encoder->stopEncoding();
+
     if (m_capThread && m_capThread->isRunning()) {
         m_capThread->quit();
         m_capThread->wait(3000);
