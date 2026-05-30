@@ -105,7 +105,7 @@ void ScreenCapturer::startCapture(const QRect &region, int targetFps)
         ComPtr<IDXGIResource> desktopResource;
         DXGI_OUTDUPL_FRAME_INFO frameInfo;
         HRESULT hr = m_duplication->AcquireNextFrame(
-            static_cast<UINT>(frameIntervalUs * 2),
+            static_cast<UINT>((frameIntervalUs * 2) / 1000),
             &frameInfo, desktopResource.GetAddressOf());
 
         if (hr == DXGI_ERROR_WAIT_TIMEOUT) continue;
