@@ -163,6 +163,10 @@ void Recorder::onEncoderStopped()
 
 void Recorder::cleanupThreads()
 {
+    if (m_capturer) m_capturer->stopCapture();
+    if (m_audioCapturer) m_audioCapturer->stopCapture();
+    if (m_encoder) m_encoder->stopEncoding();
+
     if (m_capThread && m_capThread->isRunning()) {
         m_capThread->quit();
         m_capThread->wait(3000);
@@ -176,10 +180,10 @@ void Recorder::cleanupThreads()
         m_encThread->wait(5000);
     }
 
-    m_capThread.reset();
-    m_audioThread.reset();
-    m_encThread.reset();
     m_capturer.reset();
     m_audioCapturer.reset();
     m_encoder.reset();
+    m_capThread.reset();
+    m_audioThread.reset();
+    m_encThread.reset();
 }
